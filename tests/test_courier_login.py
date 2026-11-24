@@ -13,19 +13,23 @@ class TestLoginCourier:
         assert response.status_code == 200
         assert "id" in response.json()
 
-    @pytest.mark.parametrize("missing_field", ["login", "password"])
-    def test_login_missing_field_error(self, registered_courier, missing_field):
-        login, password, _ = registered_courier
-        login = login if missing_field != "login" else None
-        password = password if missing_field != "password" else None
+    def test_login_without_login_error(self, registered_courier):
+        _, password, _ = registered_courier
 
-        response = methods.login_courier(login, password)
+        response = methods.login_courier(None, password)
 
-        # по документации должен быть 400, но стенд отдаёт 504 —
-        # это известный баг, описан в README
-        assert response.status_code in (400, 504)
-        if response.status_code == 400:
-            assert "Недостаточно данных" in response.json()["message"]
+        # ожидаемый результат по документации: 400 «Недостаточно данных для входа»
+        assert response.status_code == 400
+        assert "Недостаточно данных" in response.json()["message"]
+
+    def test_login_without_password_error(self, registered_courier):
+        login, _, _ = registered_courier
+
+        response = methods.login_courier(login, None)
+
+        # ожидаемый результат по документации: 400 «Недостаточно данных для входа»
+        assert response.status_code == 400
+        assert "Недостаточно данных" in response.json()["message"]
 
     def test_login_wrong_password_error(self, registered_courier):
         login, _, _ = registered_courier
